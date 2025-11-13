@@ -1,7 +1,6 @@
 #include "pyrolyse/pyrexport.cuh"
 
 #include <cstdio>
-#include <cstdlib>
 
 #include "pyrolyse/pyrutils.cuh"
 
@@ -16,7 +15,7 @@ int write_bmp_on_file(const Float3* pixels)
     fopen_s(&fptr, outfilepath, "wb");
     if (!fptr) return 1;
 
-    constexpr int rowSize  = (WIDTH * 3 + 3) & (~3);
+    constexpr int rowSize  = WIDTH * 3 + 3 & ~3;
     constexpr int imageSize = rowSize * HEIGHT;
     constexpr int fileSize  = 54 + imageSize;
 
