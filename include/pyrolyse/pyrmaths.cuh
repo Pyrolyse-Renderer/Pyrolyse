@@ -2,14 +2,10 @@
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
+#include "types.cuh"
 #endif
 
 #define DEG2RAD (M_PI * 2.0 / 360.0)
-
-typedef struct { float u, v; } Float2;
-typedef struct { float r, g, b; } Float3;
-typedef struct { float r, g, b, a; } Float4;
-typedef struct { float m[4][4]; } Maf44;
 
 // TODO change customs FloatX structs to built-in structs floatx
 

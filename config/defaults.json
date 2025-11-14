@@ -1,0 +1,14 @@
+{
+  "posx": 1.25,
+  "posy": 1.25,
+  "posz": 1.25,
+
+  "lax": 0.0,
+  "lay": 0.0,
+  "laz": 0.0,
+
+  "fov": 90.0,
+
+  "image_width": 1920,
+  "image_height": 1080
+}

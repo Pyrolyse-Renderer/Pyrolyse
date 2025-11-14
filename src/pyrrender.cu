@@ -1,5 +1,6 @@
 #include "pyrolyse/pyrrender.cuh"
 
+#include "pyrolyse/pyrmaths.cuh"
 #include "pyrolyse/pyrutils.cuh"
 
 Maf44 make_cam_matrix(const Float3 pos, const Float3 target)
@@ -32,7 +33,8 @@ Maf44 make_cam_matrix(const Float3 pos, const Float3 target)
 
 ViewParams cook_view_params(const Transform& cameraTransform)
 {
-    const Camera camera = {cameraTransform, 1.0f, 90.0f, static_cast<float>(WIDTH) / static_cast<float>(HEIGHT)};
+    const PyrConfig config = get_config();
+    const Camera camera = {cameraTransform, 1.0f, config.camera_fov, static_cast<float>(config.image_width) / static_cast<float>(config.image_height)};
     const Maf44 localToWorldMatrix = make_cam_matrix(cameraTransform.position, cameraTransform.lookat);
     const float planeHeight = camera.ncp * static_cast<float>(tan(camera.fov * 0.5f * DEG2RAD)) * 2.0f;
     const float planeWidth = planeHeight * camera.aspect;
@@ -54,16 +56,16 @@ __device__ Float3 frag(const Float2 uv, const ViewParams* vp, const Float3* mate
     return result.material.color;
 }
 
-__global__ void render(Float3* out, const Float3* materialBuffer, const Float3* triangleBuffer, const DeviceMesh* meshBuffer, const ViewParams vp, const int nmesh)
+__global__ void render(Float3* out, const Float3* materialBuffer, const Float3* triangleBuffer, const DeviceMesh* meshBuffer, const ViewParams vp, const int nmesh, const int imageWidth, const int imageHeight)
 {
     const unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     const unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
-    if (x >= WIDTH || y >= HEIGHT) return;
+    if (x >= imageWidth || y >= imageHeight) return;
 
-    const unsigned int idx = y * WIDTH + x;
+    const unsigned int idx = y * imageWidth + x;
     Float2 uv;
-    uv.u = static_cast<float>(x) / static_cast<float>(WIDTH - 1);
-    uv.v = static_cast<float>(y) / static_cast<float>(HEIGHT - 1);
+    uv.u = static_cast<float>(x) / static_cast<float>(imageWidth - 1);
+    uv.v = static_cast<float>(y) / static_cast<float>(imageHeight - 1);
 
     out[idx] = frag(uv, &vp, materialBuffer, triangleBuffer, meshBuffer, nmesh);
 }

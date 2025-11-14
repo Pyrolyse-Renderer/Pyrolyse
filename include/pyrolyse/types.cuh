@@ -1,6 +1,9 @@
 #pragma once
 
-#include "pyrmaths.cuh"
+typedef struct { float u, v; } Float2;
+typedef struct { float r, g, b; } Float3;
+typedef struct { float r, g, b, a; } Float4;
+typedef struct { float m[4][4]; } Maf44;
 
 typedef struct { Float3 posa, posb, posc, norma, normb, normc; } Triangle;
 typedef struct { Float3 position, lookat; } Transform;
