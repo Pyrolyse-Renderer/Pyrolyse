@@ -30,6 +30,16 @@ Maf44 make_cam_matrix(const Float3 pos, const Float3 target)
     return M;
 }
 
+ViewParams cook_view_params(const Transform& cameraTransform)
+{
+    const Camera camera = {cameraTransform, 1.0f, 90.0f, static_cast<float>(WIDTH) / static_cast<float>(HEIGHT)};
+    const Maf44 localToWorldMatrix = make_cam_matrix(cameraTransform.position, cameraTransform.lookat);
+    const float planeHeight = camera.ncp * static_cast<float>(tan(camera.fov * 0.5f * DEG2RAD)) * 2.0f;
+    const float planeWidth = planeHeight * camera.aspect;
+    const ViewParams viewParams = {planeWidth, planeHeight, camera, localToWorldMatrix};
+    return viewParams;
+};
+
 __device__ Float3 frag(const Float2 uv, const ViewParams* vp, const Float3* materialBuffer, const Float3* triangleBuffer, const DeviceMesh* meshBuffer, const int nmesh)
 {
     const auto [u, v] = sub_f2_f(uv, 0.5f);

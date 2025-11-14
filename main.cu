@@ -1,4 +1,5 @@
 #include <chrono>
+#include <filesystem>
 
 #include "pyrolyse/pyrexport.cuh"
 #include "pyrolyse/pyrimport.cuh"
@@ -6,26 +7,21 @@
 #include "pyrolyse/pyrutils.cuh"
 #include "pyrolyse/types.cuh"
 
-static ViewParams cook_view_params()
-{
-    constexpr Transform cameraTransform = {{0.0f,0.0f,2.0f},{0.0f,0.0f,0.0f}};
-    constexpr Camera camera = {cameraTransform, 1.0f, 90.0f, static_cast<float>(WIDTH) / static_cast<float>(HEIGHT)};
-    const Maf44 localToWorldMatrix = make_cam_matrix(cameraTransform.position, cameraTransform.lookat);
-    const float planeHeight = camera.ncp * static_cast<float>(tan(camera.fov * 0.5f * DEG2RAD)) * 2.0f;
-    const float planeWidth = planeHeight * camera.aspect;
-    const ViewParams viewParams = {planeWidth, planeHeight, camera, localToWorldMatrix};
-    return viewParams;
-};
-
 int main()
 {
     const auto start = std::chrono::high_resolution_clock::now();
 
-    const ViewParams viewParams = cook_view_params();
+    const ViewParams viewParams = cook_view_params({{1.25f, 1.25f, 1.25f}, {.50f, .50f,.50f}});
 
     int meshcount = 0;
     int trianglecount = 0;
     const Mesh* meshes = load_models(meshcount, trianglecount);
+
+    if (!meshes || meshcount == 0 || trianglecount == 0)
+    {
+        fprintf(stderr, "Failed to load meshes\n");
+        return 1;
+    }
 
     auto* cpu_meshes_values = new DeviceMesh[meshcount];
     auto* cpu_materials_values = new Float3[meshcount*3];
@@ -41,13 +37,13 @@ int main()
     Float3* gpu_triangles;
 
     cudaMalloc(&gpu_pixels, WIDTH * HEIGHT * sizeof(Float3));
-    cudaMalloc(&gpu_materials, meshcount * 3 * sizeof(Float3));
+    cudaMalloc(&gpu_materials, meshcount * sizeof(Float3));
     cudaMalloc(&gpu_triangles, trianglecount * 6 * sizeof(Float3));
     cudaMalloc(&gpu_meshes, meshcount * sizeof(DeviceMesh));
 
     cudaMemcpy(gpu_meshes, cpu_meshes_values, meshcount * sizeof(DeviceMesh), cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_triangles, cpu_triangles_values, trianglecount * 6 * sizeof(Float3), cudaMemcpyHostToDevice);
-    cudaMemcpy(gpu_materials, cpu_materials_values, meshcount * 3 * sizeof(Float3), cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_materials, cpu_materials_values, meshcount * sizeof(Float3), cudaMemcpyHostToDevice);
 
     delete[] cpu_meshes_values;
     delete[] cpu_triangles_values;
