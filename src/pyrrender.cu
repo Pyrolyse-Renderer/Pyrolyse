@@ -3,6 +3,10 @@
 #include "pyrolyse/pyrmaths.cuh"
 #include "pyrolyse/pyrutils.cuh"
 
+#include <curand_kernel.h>
+
+#define SEED 54832164.28227f;
+
 Maf44 make_cam_matrix(const Float3 pos, const Float3 target)
 {
     constexpr Float3 upTemp = {0, 1, 0};
@@ -51,9 +55,30 @@ __device__ Float3 frag(const Float2 uv, const ViewParams* vp, const Float3* mate
     const Float3 origin = vp->cam.t.position;
     const Ray ray = { .origin = origin, .dir = norm_f3(sub_f3(vpw, origin))};
 
-    const Hit result = ray_collision(ray, materialBuffer, triangleBuffer, meshBuffer, nmesh);
+    return trace(ray, materialBuffer, triangleBuffer, meshBuffer, nmesh);
+}
 
-    return result.material.color;
+__device__ Float3 trace(Ray ray, const Float3* materialBuffer, const Float3* triangleBuffer, const DeviceMesh* meshBuffer, const int nmesh)
+{
+    Float3 light = {.0f, .0f, .0f};
+    Float3 col = {1.0f, 1.0f, 1.0f};
+    for (int i = 0; i < 15; i++)
+    {
+        if (const Hit result = ray_collision(ray, materialBuffer, triangleBuffer, meshBuffer, nmesh); result.didHit)
+        {
+            ray.origin = result.location;
+            ray.dir = rand_angular_direction(result.normal);
+            Material mat = result.material;
+            const Float3 emitted = mul_f3_f({1.0f, 0.0f, 0.0f}, .50);
+            light = mul_f3(emitted, col);
+            col = mul_f3(col, mat.color);
+        }
+        else
+        {
+            break;
+        }
+    }
+    return light;
 }
 
 __global__ void render(Float3* out, const Float3* materialBuffer, const Float3* triangleBuffer, const DeviceMesh* meshBuffer, const ViewParams vp, const int nmesh, const int imageWidth, const int imageHeight)
@@ -72,7 +97,7 @@ __global__ void render(Float3* out, const Float3* materialBuffer, const Float3* 
 
 __device__ Hit ray_collision(const Ray& ray, const Float3* materialBuffer, const Float3* triangleBuffer, const DeviceMesh* meshBuffer, const int nmesh)
 {
-    Hit closestHit = {false, FLT_MAX, {.0f,.0f, .0f}, {.0f, .0f, .0f}, {{.0,1.0,.0}}};
+    Hit closestHit = {false, FLT_MAX, {.0f,.0f, .0f}, {.0f, .0f, .0f}, {{.0,0.0,.0}}};
     for (int i = 0; i < nmesh; i++)
     {
         const DeviceMesh currentMesh = meshBuffer[i];
@@ -136,4 +161,18 @@ __device__ __forceinline__ Hit hit_triangle(const Ray& ray, const Triangle& tria
         tnorm,
         {{0.0f, 0.0f, 0.0f}}
     };
+}
+
+__device__ Float3 rand_direction()
+{
+    const unsigned int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    curandState state;
+    curand_init(54832164.28227f, idx, 0, &state);
+    return norm_f3(Float3{curand_normal(&state), curand_normal(&state), curand_normal(&state)});
+}
+
+__device__ Float3 rand_angular_direction(const Float3 normal)
+{
+    const Float3 dir = rand_direction();
+    return mul_f3_f(dir, sign_f(dot_f3(normal, dir)));
 }

@@ -1,7 +1,7 @@
 import re
 import sys
 
-FILE_NAME = "cubetest"
+FILE_NAME = "u"
 INPUT_FILE = "./" + FILE_NAME + ".obj"
 OUTPUT_FILE = "./" + FILE_NAME + ".pyrobj"
 

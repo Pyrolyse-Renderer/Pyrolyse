@@ -61,6 +61,20 @@ __host__ __device__ Float3 cross_f3(const Float3 a, const Float3 b)
     return result;
 }
 
+__host__ __device__ Float3 sign_f3(const Float3 f)
+{
+    Float3 result;
+    result.r = static_cast<float>((f.r > 0.0f) - (f.r < 0.0f));
+    result.g = static_cast<float>((f.g > 0.0f) - (f.g < 0.0f));
+    result.b = static_cast<float>((f.b > 0.0f) - (f.b < 0.0f));
+    return result;
+}
+
+__host__ __device__ float sign_f(const float f)
+{
+    return static_cast<float>((f > 0.0f) - (f < 0.0f));
+}
+
 __host__ __device__ float dot_f3(const Float3 a, const Float3 b) {
     return a.r * b.r + a.g * b.g + a.b * b.b;
 }

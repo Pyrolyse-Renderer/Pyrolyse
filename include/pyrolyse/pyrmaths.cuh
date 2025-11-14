@@ -19,6 +19,8 @@ __host__ __device__ Float3 add_f3(Float3 a, Float3 b);
 __host__ __device__ Float3 norm_f3(Float3 f);
 __host__ __device__ Float3 sub_f3(Float3 a, Float3 b);
 __host__ __device__ Float3 cross_f3(Float3 a, Float3 b);
+__host__ __device__ Float3 sign_f3(Float3 f);
+__host__ __device__ float sign_f(float f);
 __host__ __device__ float dot_f3(Float3 a, Float3 b);
 
 __host__ __device__ unsigned char clamp_to_255(float v);
