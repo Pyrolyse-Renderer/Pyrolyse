@@ -22,11 +22,25 @@ static PyrConfig load_config(const std::string& path){
     config.image_height = j["image_height"].get<int>();
     config.rayPerPixel = j["ray_per_pixel"].get<int>();
     config.maxBounces = j["max_bounces"].get<int>();
+    config.meshes_dir = j["meshes_dir"].get<std::string>();
+    config.outfile_path = j["outfile_path"].get<std::string>();
     return config;
+}
+
+static const char* config_path()
+{
+    const static char* path = getenv("PYROLYSE_CONFIG");
+    if (!path)
+    {
+        fprintf(stderr,"Invalid config path. Check 'PYROLYSE_CONFIG' environment variable.\n");
+        exit(1);
+    }
+    fprintf(stdout,"Loading config from %s\n", path);
+    return path;
 }
 
 const PyrConfig& get_config()
 {
-    static PyrConfig config = load_config("D:/Pyrolyse/config/defaults.json");
+    static PyrConfig config = load_config(config_path());
     return config;
 }

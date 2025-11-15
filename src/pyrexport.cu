@@ -6,14 +6,10 @@
 
 int write_bmp_on_file(const Float3* pixels)
 {
-    const PyrConfig config = get_config();
-    char* outfilepath;
-    size_t outfilepathlen;
-    _dupenv_s(&outfilepath, &outfilepathlen, "PYROLYSE_OUT_FILE");
-    if (outfilepathlen == 0) return 1;
+    const PyrConfig& config = get_config();
 
     FILE* fptr;
-    fopen_s(&fptr, outfilepath, "wb");
+    fopen_s(&fptr, config.outfile_path.c_str(), "wb");
     if (!fptr) return 1;
 
     const int rowSize  = config.image_width * 3 + 3 & ~3;

@@ -9,9 +9,12 @@
 
   "fov": 75.0,
 
-  "image_width": 3840,
-  "image_height": 2160,
+  "image_width": 1920,
+  "image_height": 1080,
 
-  "ray_per_pixel": 25000,
-  "max_bounces": 50
+  "ray_per_pixel": 1000,
+  "max_bounces": 30,
+
+  "meshes_dir": "",
+  "outfile_path": ""
 }

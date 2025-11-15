@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 
+#include "pyrolyse/pyrutils.cuh"
+
 Mesh load_obj(const char* path)
 {
     std::ifstream ifs(path);
@@ -50,7 +52,7 @@ Mesh* load_models(int& out_mesh_count, int& out_triangle_count)
 {
     std::vector<Mesh> meshes = {};
     out_mesh_count = 0;
-    const std::string& dir = "D:/Pyrolyse/temp";
+    const std::string& dir = get_config().meshes_dir;
     if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
         fprintf(stderr, "Failed to find folder %s\n", dir.c_str());
         return nullptr;

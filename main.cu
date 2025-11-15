@@ -10,7 +10,13 @@
 
 int main()
 {
-    const PyrConfig config = get_config();
+    const PyrConfig& config = get_config();
+
+    if (config.outfile_path.empty() || config.meshes_dir.empty())
+    {
+        fprintf(stderr, "Invalid path found in config file.\n");
+        return 1;
+    }
 
     const auto start = std::chrono::high_resolution_clock::now();
 
