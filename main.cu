@@ -1,5 +1,6 @@
 #include <chrono>
 #include <filesystem>
+#include <random>
 
 #include "pyrolyse/pyrexport.cuh"
 #include "pyrolyse/pyrimport.cuh"
@@ -25,34 +26,44 @@ int main()
         return 1;
     }
 
+    printf("Found %d meshes.\n", meshcount);
+
     auto* cpu_meshes_values = new DeviceMesh[meshcount];
-    auto* cpu_materials_values = new Float3[meshcount*3];
-    auto* cpu_triangles_values = new Float3[trianglecount*6];
+    auto* cpu_materials_values = new Material[meshcount];
+    auto* cpu_triangles_values = new Float3[trianglecount * 6];
     cook_buffers(meshes, cpu_triangles_values, cpu_materials_values, cpu_meshes_values, meshcount);
 
-    dim3 block(16,16);
-    dim3 grid((config.image_width + block.x - 1) / block.x,(config.image_height + block.y - 1) / block.y);
+    dim3 block(8, 8);
+    dim3 grid((config.image_width + block.x - 1) / block.x, (config.image_height + block.y - 1) / block.y);
 
     Float3* gpu_pixels;
     DeviceMesh* gpu_meshes;
-    Float3* gpu_materials;
+    Material* gpu_materials;
     Float3* gpu_triangles;
 
     cudaMalloc(&gpu_pixels, config.image_width * config.image_height * sizeof(Float3));
-    cudaMalloc(&gpu_materials, meshcount * sizeof(Float3));
+    cudaMalloc(&gpu_materials, meshcount * sizeof(Material));
     cudaMalloc(&gpu_triangles, trianglecount * 6 * sizeof(Float3));
     cudaMalloc(&gpu_meshes, meshcount * sizeof(DeviceMesh));
 
     cudaMemcpy(gpu_meshes, cpu_meshes_values, meshcount * sizeof(DeviceMesh), cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_triangles, cpu_triangles_values, trianglecount * 6 * sizeof(Float3), cudaMemcpyHostToDevice);
-    cudaMemcpy(gpu_materials, cpu_materials_values, meshcount * sizeof(Float3), cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_materials, cpu_materials_values, meshcount * sizeof(Material), cudaMemcpyHostToDevice);
 
     delete[] cpu_meshes_values;
     delete[] cpu_triangles_values;
     delete[] cpu_materials_values;
 
-    render<<<grid, block>>>(gpu_pixels, gpu_materials, gpu_triangles, gpu_meshes, viewParams, meshcount, config.image_width, config.image_height);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<long> dist(0, LONG_MAX);
+    const long random_seed = dist(gen);
+
+    const auto startgpu = std::chrono::high_resolution_clock::now();
+    render<<<grid, block>>>(gpu_pixels, gpu_materials, gpu_triangles, gpu_meshes, viewParams, meshcount, random_seed,
+                            config.image_width, config.image_height, config.rayPerPixel, config.maxBounces);
     cudaDeviceSynchronize();
+    const auto endgpu = std::chrono::high_resolution_clock::now();
 
     if (cudaGetLastError() != cudaSuccess)
     {
@@ -60,7 +71,8 @@ int main()
     }
 
     auto* pixel_out = new Float3[config.image_width * config.image_height];
-    cudaMemcpy(pixel_out, gpu_pixels, config.image_width * config.image_height * sizeof(Float3), cudaMemcpyDeviceToHost);
+    cudaMemcpy(pixel_out, gpu_pixels, config.image_width * config.image_height * sizeof(Float3),
+               cudaMemcpyDeviceToHost);
     const int result = write_bmp_on_file(pixel_out);
 
     delete[] pixel_out;
@@ -71,8 +83,10 @@ int main()
 
     const auto end = std::chrono::high_resolution_clock::now();
     const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    const auto durationgpu = std::chrono::duration_cast<std::chrono::milliseconds>(endgpu - startgpu);
 
-    printf("Task ended in : %lld ms", duration.count());
+    printf("Task ended in : %lld ms\n", duration.count());
+    printf("Frame gen took : %lld ms\n", durationgpu.count());
 
     return result;
 }

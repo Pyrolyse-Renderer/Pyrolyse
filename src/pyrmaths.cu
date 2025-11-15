@@ -25,6 +25,11 @@ __host__ __device__ Float2 sub_f2_f(const Float2 a, const float b)
     return {a.u - b, a.v - b};
 }
 
+__host__ __device__ Float2 mul_f2_f(const Float2 a, const float b)
+{
+    return {a.u * b, a.v * b};
+}
+
 __host__ __device__ Float3 mul_f3(const Float3 a, const Float3 b)
 {
     return { a.r* b.r, a.g* b.g, a.b* b.b };
@@ -38,6 +43,11 @@ __host__ __device__ Float3 mul_f3_f(const Float3 a, const float b)
 __host__ __device__ Float3 add_f3(const Float3 a, const Float3 b)
 {
     return { a.r + b.r, a.g + b.g, a.b + b.b };
+}
+
+__host__ __device__ Float3 add_f3_f(const Float3 f, const float s)
+{
+    return { f.r + s, f.g + s, f.b + s };
 }
 
 __host__ __device__ Float3 norm_f3(const Float3 f)
@@ -70,6 +80,27 @@ __host__ __device__ Float3 sign_f3(const Float3 f)
     return result;
 }
 
+__host__ __device__ Float3 div_f3_f(const Float3 f, const float d)
+{
+    return Float3{f.r / d, f.g / d, f.b / d};
+}
+
+__host__ __device__ Float3 lerp_f3(const Float3 start, const Float3 end, const float t)
+{
+    Float3 result;
+    result.r = start.r + t * (end.r - start.r);
+    result.g = start.g + t * (end.g - start.g);
+    result.b = start.b + t * (end.b - start.b);
+    return result;
+}
+
+__host__ __device__ float smoothstep(const float edge0, const float edge1, const float x)
+{
+    float t = (x - edge0) / (edge1 - edge0);
+    t = fmax(0.0f, fmin(1.0f, t));
+    return t * t * (3.0f - 2.0f * t);
+}
+
 __host__ __device__ float sign_f(const float f)
 {
     return static_cast<float>((f > 0.0f) - (f < 0.0f));
@@ -77,6 +108,10 @@ __host__ __device__ float sign_f(const float f)
 
 __host__ __device__ float dot_f3(const Float3 a, const Float3 b) {
     return a.r * b.r + a.g * b.g + a.b * b.b;
+}
+
+__host__ __device__ float maxf(const float a, const float b) {
+    return a > b ? a : b;
 }
 
 __host__ __device__ unsigned char clamp_to_255(const float v)

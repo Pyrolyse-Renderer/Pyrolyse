@@ -1,7 +1,7 @@
 import re
 import sys
 
-FILE_NAME = "u"
+FILE_NAME = "s"
 INPUT_FILE = "./" + FILE_NAME + ".obj"
 OUTPUT_FILE = "./" + FILE_NAME + ".pyrobj"
 
@@ -42,7 +42,7 @@ def ensure_triangles(faces):
 
 def write_export(filename, vertices, normals, faces):
     with open(filename, "w") as out:
-        out.write(f"{len(faces)}\n")
+        out.write(f"{len(faces)} 0.0 0.0 0.0 0.0 0.0 0.0 0.0\n")
         for face in faces:
             line_parts = []
             for (vid, nid) in face:

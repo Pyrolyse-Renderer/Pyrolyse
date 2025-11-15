@@ -20,6 +20,8 @@ static PyrConfig load_config(const std::string& path){
     config.camera_fov = j["fov"].get<float>();
     config.image_width = j["image_width"].get<int>();
     config.image_height = j["image_height"].get<int>();
+    config.rayPerPixel = j["ray_per_pixel"].get<int>();
+    config.maxBounces = j["max_bounces"].get<int>();
     return config;
 }
 

@@ -6,10 +6,8 @@
 
 struct PyrConfig
 {
-    Float3 camera_start_pos;
-    Float3 camera_start_lookat;
-    int image_width;
-    int image_height;
+    Float3 camera_start_pos, camera_start_lookat;
+    int image_width, image_height, rayPerPixel, maxBounces;
     float camera_fov;
 };
 

@@ -11,10 +11,11 @@ Mesh load_obj(const char* path)
     std::ifstream ifs(path);
     std::vector<Triangle> tris;
 
-    if (!ifs) return Mesh{nullptr, 0, {{.0f, .0f, .0f}}};
+    if (!ifs) return Mesh{nullptr, 0, {{.0f, .0f, .0f}, {.0f, .0f, .0f}, .0f}};
 
     int n = 0;
-    ifs >> n;
+    float colr, colg, colb, emr, emg, emb, ems;
+    ifs >> n >> colr >> colg >> colb >> emr >> emg >> emb >> ems;
     tris.reserve(n);
 
     float x1, y1, z1, nx1, ny1, nz1, x2, y2, z2, nx2, ny2, nz2, x3, y3, z3, nx3, ny3, nz3;
@@ -41,7 +42,7 @@ Mesh load_obj(const char* path)
     auto* triarray = new Triangle[ts];
     for (int i = 0; i < ts; i++) triarray[i] = tris[i];
 
-    return Mesh{triarray, n, {{1.0f, 1.0f, 1.0f}}};
+    return Mesh{triarray, n, {{colr, colg, colb}, {emr, emg, emb}, ems}};
 
 }
 
@@ -49,7 +50,7 @@ Mesh* load_models(int& out_mesh_count, int& out_triangle_count)
 {
     std::vector<Mesh> meshes = {};
     out_mesh_count = 0;
-    const std::string& dir = "D:/Pyrolyse/samples";
+    const std::string& dir = "D:/Pyrolyse/temp";
     if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
         fprintf(stderr, "Failed to find folder %s\n", dir.c_str());
         return nullptr;
@@ -68,7 +69,7 @@ Mesh* load_models(int& out_mesh_count, int& out_triangle_count)
     return meshesarray;
 }
 
-void cook_buffers(const Mesh* meshes, Float3* out_triangles, Float3* out_materials, DeviceMesh* out_meshes, const int meshcount)
+void cook_buffers(const Mesh* meshes, Float3* out_triangles, Material* out_materials, DeviceMesh* out_meshes, const int meshcount)
 {
     int k = 0;
     int tri_idx = 0;
@@ -88,7 +89,7 @@ void cook_buffers(const Mesh* meshes, Float3* out_triangles, Float3* out_materia
             tri_idx++;
         }
 
-        out_materials[l] = {1.0f,0.0f,0.0f};
+        out_materials[l] = meshes[i].mat;
         out_meshes[m] = {start_tri, n, l};
         l++;
         m++;
