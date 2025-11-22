@@ -1,20 +1,20 @@
 {
-  "posx": 3.5,
-  "posy": -1.2,
-  "posz": 3.5,
+  "posx": -3.0,
+  "posy": 1.0,
+  "posz": 1.0,
 
-  "lax": 0.5,
-  "lay": 0.5,
-  "laz": 0.5,
+  "lax": 0.0,
+  "lay": 0.0,
+  "laz": 0.0,
 
   "fov": 75.0,
 
   "image_width": 1920,
   "image_height": 1080,
 
-  "ray_per_pixel": 1000,
-  "max_bounces": 30,
+  "ray_per_pixel": 15000,
+  "max_bounces": 60,
 
-  "meshes_dir": "",
-  "outfile_path": ""
+  "meshes_dir": "D:/Pyrolyse/samples",
+  "outfile_path": "D:/Pyrolyse/samples/sample.bmp"
 }

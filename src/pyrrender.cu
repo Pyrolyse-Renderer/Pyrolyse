@@ -7,7 +7,7 @@
 
 Maf44 make_cam_matrix(const Float3 pos, const Float3 target)
 {
-    constexpr Float3 upTemp = {0, 1, 0};
+    constexpr Float3 upTemp = {0, -1, 0};
 
     const auto [fr, fg, fb] = norm_f3(sub_f3(target, pos));
     const auto [rr, rg, rb] = norm_f3({
@@ -256,11 +256,11 @@ __device__ Float3 environmental_light(const Ray& ray)
     constexpr float SunIntensity = 1.0f;
     constexpr float SunFocus = 5.0f;
 
-    const float skyT = pow(smoothstep(.0f, .4f, -ray.dir.g), .185f);
+    const float skyT = pow(smoothstep(.0f, .4f, ray.dir.g), .185f);
     const Float3 sky = lerp_f3(ZenithColor, HorizonColor, skyT);
     const float sun = pow(maxf(0, dot_f3(ray.dir, mul_f3_f(SunLightDirection, -1.0f))), SunFocus) * SunIntensity;
 
-    const float groundT = smoothstep(-.01f, .0f, ray.dir.g);
+    const float groundT = smoothstep(.01f, .0f, ray.dir.g);
     const float sunMask = groundT <= 0;
     return add_f3_f(lerp_f3(sky, GroundColor, groundT), sun * sunMask);
 }
