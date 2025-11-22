@@ -71,7 +71,7 @@ Mesh* load_models(int& out_mesh_count, int& out_triangle_count)
     return meshesarray;
 }
 
-void cook_buffers(const Mesh* meshes, Float3* out_triangles, Material* out_materials, DeviceMesh* out_meshes, const int meshcount)
+void cook_buffers(const Mesh* meshes, float3* out_triangles, Material* out_materials, DeviceMesh* out_meshes, const int meshcount)
 {
     int k = 0;
     int tri_idx = 0;

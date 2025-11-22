@@ -4,7 +4,7 @@
 
 #include "pyrolyse/pyrutils.cuh"
 
-int write_bmp_on_file(const Float3* pixels)
+int write_bmp_on_file(const float3* pixels)
 {
     const PyrConfig& config = get_config();
 
@@ -39,9 +39,9 @@ int write_bmp_on_file(const Float3* pixels)
             const int idx = y * config.image_width + x;
             const int i   = x * 3;
 
-            row[i + 0] = clamp_to_255(pixels[idx].b);
-            row[i + 1] = clamp_to_255(pixels[idx].g);
-            row[i + 2] = clamp_to_255(pixels[idx].r);
+            row[i + 0] = clamp_to_255(pixels[idx].z);
+            row[i + 1] = clamp_to_255(pixels[idx].y);
+            row[i + 2] = clamp_to_255(pixels[idx].x);
         }
         fwrite(row, 1, rowSize, fptr);
     }

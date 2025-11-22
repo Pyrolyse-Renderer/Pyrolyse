@@ -36,24 +36,24 @@ int main()
 
     auto* cpu_meshes_values = new DeviceMesh[meshcount];
     auto* cpu_materials_values = new Material[meshcount];
-    auto* cpu_triangles_values = new Float3[trianglecount * 6];
+    auto* cpu_triangles_values = new float3[trianglecount * 6];
     cook_buffers(meshes, cpu_triangles_values, cpu_materials_values, cpu_meshes_values, meshcount);
 
     dim3 block(8, 8);
     dim3 grid((config.image_width + block.x - 1) / block.x, (config.image_height + block.y - 1) / block.y);
 
-    Float3* gpu_pixels;
+    float3* gpu_pixels;
     DeviceMesh* gpu_meshes;
     Material* gpu_materials;
-    Float3* gpu_triangles;
+    float3* gpu_triangles;
 
-    cudaMalloc(&gpu_pixels, config.image_width * config.image_height * sizeof(Float3));
+    cudaMalloc(&gpu_pixels, config.image_width * config.image_height * sizeof(float3));
     cudaMalloc(&gpu_materials, meshcount * sizeof(Material));
-    cudaMalloc(&gpu_triangles, trianglecount * 6 * sizeof(Float3));
+    cudaMalloc(&gpu_triangles, trianglecount * 6 * sizeof(float3));
     cudaMalloc(&gpu_meshes, meshcount * sizeof(DeviceMesh));
 
     cudaMemcpy(gpu_meshes, cpu_meshes_values, meshcount * sizeof(DeviceMesh), cudaMemcpyHostToDevice);
-    cudaMemcpy(gpu_triangles, cpu_triangles_values, trianglecount * 6 * sizeof(Float3), cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_triangles, cpu_triangles_values, trianglecount * 6 * sizeof(float3), cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_materials, cpu_materials_values, meshcount * sizeof(Material), cudaMemcpyHostToDevice);
 
     delete[] cpu_meshes_values;
@@ -76,8 +76,8 @@ int main()
         printf("Something went wrong : %s\n", cudaGetErrorString(cudaGetLastError()));
     }
 
-    auto* pixel_out = new Float3[config.image_width * config.image_height];
-    cudaMemcpy(pixel_out, gpu_pixels, config.image_width * config.image_height * sizeof(Float3),
+    auto* pixel_out = new float3[config.image_width * config.image_height];
+    cudaMemcpy(pixel_out, gpu_pixels, config.image_width * config.image_height * sizeof(float3),
                cudaMemcpyDeviceToHost);
     const int result = write_bmp_on_file(pixel_out);
 
