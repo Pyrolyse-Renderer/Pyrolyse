@@ -15,6 +15,6 @@
   "ray_per_pixel": 15000,
   "max_bounces": 60,
 
-  "meshes_dir": "D:/Pyrolyse/samples",
-  "outfile_path": "D:/Pyrolyse/samples/sample.bmp"
+  "meshes_dir": "",
+  "outfile_path": ""
 }
