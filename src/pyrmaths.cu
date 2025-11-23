@@ -12,42 +12,42 @@ __host__ __device__ float4 operator*(const Maf44& M, const float4 v)
 
 __host__ __device__ float3 f4_to_f3(const float4 f)
 {
-    return {f.x, f.y, f.z};
+    return make_float3(f.x, f.y, f.z);
 }
 
 __host__ __device__ float4 f3_to_f4(const float3 f, const float w)
 {
-    return {f.x, f.y, f.z, w};
+    return make_float4(f.x, f.y, f.z, w);
 }
 
 __host__ __device__ float2 operator-(const float2 a, const float b)
 {
-    return {a.x - b, a.y - b};
+    return make_float2(a.x - b, a.y - b);
 }
 
 __host__ __device__ float2 operator*(const float2 a, const float b)
 {
-    return {a.x * b, a.y * b};
+    return make_float2(a.x * b, a.y * b);
 }
 
 __host__ __device__ float3 operator*(const float3 a, const float3 b)
 {
-    return {a.x * b.x, a.y * b.y, a.z * b.z};
+    return make_float3(a.x * b.x, a.y * b.y, a.z * b.z);
 }
 
 __host__ __device__ float3 operator*(const float3 a, const float b)
 {
-    return {a.x * b, a.y * b, a.z * b};
+    return make_float3(a.x * b, a.y * b, a.z * b);
 }
 
 __host__ __device__ float3 operator+(const float3 a, const float3 b)
 {
-    return {a.x + b.x, a.y + b.y, a.z + b.z};
+    return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
 __host__ __device__ float3 operator+(const float3 f, const float s)
 {
-    return {f.x + s, f.y + s, f.z + s};
+    return make_float3(f.x + s, f.y + s, f.z + s);
 }
 
 __host__ __device__ float3 norm_f3(const float3 f)
@@ -59,7 +59,7 @@ __host__ __device__ float3 norm_f3(const float3 f)
 
 __host__ __device__ float3 operator-(const float3 a, const float3 b)
 {
-    return {a.x - b.x, a.y - b.y, a.z - b.z};
+    return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 __host__ __device__ float3 cross_f3(const float3 a, const float3 b)
@@ -82,7 +82,7 @@ __host__ __device__ float3 sign_f3(const float3 f)
 
 __host__ __device__ float3 operator/(const float3 f, const float d)
 {
-    return float3{f.x / d, f.y / d, f.z / d};
+    return make_float3(f.x / d, f.y / d, f.z / d);
 }
 
 __host__ __device__ float3 lerp_f3(const float3 start, const float3 end, const float t)
