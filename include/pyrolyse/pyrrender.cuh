@@ -17,3 +17,4 @@ __device__ float rand_value(unsigned int state);
 __device__ float3 rand_normal_direction(float3 normal, unsigned int state);
 __device__ float2 rand_circle_point(unsigned int state);
 __device__ float3 environmental_light(const Ray& ray);
+__device__ bool is_inbounds(const Ray& ray, float3 boxMin, float3 boxMax);

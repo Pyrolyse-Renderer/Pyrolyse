@@ -9,7 +9,7 @@ Maf44 make_cam_matrix(const float3 pos, const float3 target)
 {
     constexpr float3 upTemp = {0, -1, 0};
 
-    const auto [fr, fg, fb] = norm_f3(target- pos);
+    const auto [fr, fg, fb] = norm_f3(target - pos);
     const auto [rr, rg, rb] = norm_f3({
         upTemp.y * fb - upTemp.z * fg,
         upTemp.z * fr - upTemp.x * fb,
@@ -118,7 +118,8 @@ __global__ void render(float3* out, const Material* materialBuffer, const float3
     };
     const long pixelindex = pixcoord.y * numpixels.x + pixcoord.x;
 
-    out[idx] = frag(uv - .5f, &vp, materialBuffer, triangleBuffer, meshBuffer, nmesh, pixelindex * seed, rayPerPixel, maxBounces, imageWidth);
+    out[idx] = frag(uv - .5f, &vp, materialBuffer, triangleBuffer, meshBuffer, nmesh, pixelindex * seed, rayPerPixel,
+                    maxBounces, imageWidth);
 }
 
 __device__ Hit ray_collision(const Ray& ray, const Material* materialBuffer, const float3* triangleBuffer,
@@ -134,7 +135,8 @@ __device__ Hit ray_collision(const Ray& ray, const Material* materialBuffer, con
 
     for (int i = 0; i < nmesh; i++)
     {
-        const auto [tindex, ntri, mindex] = meshBuffer[i];
+        const auto [tindex, ntri, mindex, bbmin, bbmax] = meshBuffer[i];
+        if (!is_inbounds(ray, bbmin, bbmax)) continue;
         for (int tr = tindex; tr < tindex + ntri; tr++)
         {
             const auto triangle = Triangle{
@@ -249,7 +251,7 @@ __device__ float3 environmental_light(const Ray& ray)
 {
     constexpr float3 HorizonColor = {.596f, .737f, .886f};
     constexpr float3 ZenithColor = {.956f, .937f, .823f};
-    constexpr float3 GroundColor = {.1f, .1f, .3f};
+    constexpr float3 GroundColor = {.1f, .1f, .1f};
     constexpr float3 SunLightDirection = {.8f, .5f, -.1f};
     constexpr float SunIntensity = 1.0f;
     constexpr float SunFocus = 5.0f;
@@ -258,7 +260,46 @@ __device__ float3 environmental_light(const Ray& ray)
     const float3 sky = lerp_f3(ZenithColor, HorizonColor, skyT);
     const float sun = pow(maxf(0, dot_f3(ray.dir, SunLightDirection * -1.0f)), SunFocus) * SunIntensity;
 
-    const float groundT = smoothstep(.01f, .0f, ray.dir.y);
+    const float groundT = smoothstep(.005f, .0f, ray.dir.y);
     const float sunMask = groundT <= 0;
     return lerp_f3(sky, GroundColor, groundT) + sun * sunMask;
+}
+
+__device__ bool is_inbounds(const Ray& ray, const float3 boxMin, const float3 boxMax)
+{
+    float tMin = -INFINITY;
+    float tMax = INFINITY;
+
+    const float3 orig = ray.origin;
+    const float3 dir  = ray.dir;
+
+    for (int i = 0; i < 3; ++i)
+    {
+        const float o = reinterpret_cast<const float*>(&orig)[i];
+        const float d = reinterpret_cast<const float*>(&dir)[i];
+        const float mn = reinterpret_cast<const float*>(&boxMin)[i];
+        const float mx = reinterpret_cast<const float*>(&boxMax)[i];
+
+        if (fabs(d) < 1e-8f)
+        {
+            if (o < mn || o > mx) return false;
+            continue;
+        }
+
+        float t1 = (mn - o) / d;
+        float t2 = (mx - o) / d;
+
+        if (t1 > t2) {
+            const float tmp = t1;
+            t1 = t2;
+            t2 = tmp;
+        }
+
+        tMin = fmaxf(tMin, t1);
+        tMax = fminf(tMax, t2);
+
+        if (tMax < tMin) return false;
+    }
+
+    return true;
 }
