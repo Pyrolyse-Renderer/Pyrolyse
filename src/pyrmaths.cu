@@ -1,6 +1,6 @@
 # include "pyrolyse/pyrmaths.cuh"
 
-__host__ __device__ float4 mul_maf4_f4(const Maf44& M, const float4 v)
+__host__ __device__ float4 operator*(const Maf44& M, const float4 v)
 {
     float4 result;
     result.x = M.m[0][0] * v.x + M.m[0][1] * v.y + M.m[0][2] * v.z + M.m[0][3] * v.w;
@@ -20,44 +20,44 @@ __host__ __device__ float4 f3_to_f4(const float3 f, const float w)
     return {f.x, f.y, f.z, w};
 }
 
-__host__ __device__ float2 sub_f2_f(const float2 a, const float b)
+__host__ __device__ float2 operator-(const float2 a, const float b)
 {
     return {a.x - b, a.y - b};
 }
 
-__host__ __device__ float2 mul_f2_f(const float2 a, const float b)
+__host__ __device__ float2 operator*(const float2 a, const float b)
 {
     return {a.x * b, a.y * b};
 }
 
-__host__ __device__ float3 mul_f3(const float3 a, const float3 b)
+__host__ __device__ float3 operator*(const float3 a, const float3 b)
 {
-    return { a.x* b.x, a.y* b.y, a.z* b.z };
+    return {a.x * b.x, a.y * b.y, a.z * b.z};
 }
 
-__host__ __device__ float3 mul_f3_f(const float3 a, const float b)
+__host__ __device__ float3 operator*(const float3 a, const float b)
 {
-    return { a.x * b, a.y * b, a.z * b };
+    return {a.x * b, a.y * b, a.z * b};
 }
 
-__host__ __device__ float3 add_f3(const float3 a, const float3 b)
+__host__ __device__ float3 operator+(const float3 a, const float3 b)
 {
-    return { a.x + b.x, a.y + b.y, a.z + b.z };
+    return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
-__host__ __device__ float3 add_f3_f(const float3 f, const float s)
+__host__ __device__ float3 operator+(const float3 f, const float s)
 {
-    return { f.x + s, f.y + s, f.z + s };
+    return {f.x + s, f.y + s, f.z + s};
 }
 
 __host__ __device__ float3 norm_f3(const float3 f)
 {
-    const float length = sqrtf(f.x * f.x + f.y * f.y + f.z * f.z);
-    if (length == 0.0f) return {0.0f, 0.0f, 0.0f};
-    return {f.x / length, f.y / length, f.z / length};
+    const float inv_length = rsqrtf(fmaf(f.x, f.x, fmaf(f.y, f.y, f.z * f.z)));
+    if (isinf(inv_length) || isnan(inv_length)) return {0.0f, 0.0f, 0.0f};
+    return f * inv_length;
 }
 
-__host__ __device__ float3 sub_f3(const float3 a, const float3 b)
+__host__ __device__ float3 operator-(const float3 a, const float3 b)
 {
     return {a.x - b.x, a.y - b.y, a.z - b.z};
 }
@@ -80,7 +80,7 @@ __host__ __device__ float3 sign_f3(const float3 f)
     return result;
 }
 
-__host__ __device__ float3 div_f3_f(const float3 f, const float d)
+__host__ __device__ float3 operator/(const float3 f, const float d)
 {
     return float3{f.x / d, f.y / d, f.z / d};
 }
@@ -106,11 +106,13 @@ __host__ __device__ float sign_f(const float f)
     return static_cast<float>((f > 0.0f) - (f < 0.0f));
 }
 
-__host__ __device__ float dot_f3(const float3 a, const float3 b) {
+__host__ __device__ float dot_f3(const float3 a, const float3 b)
+{
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-__host__ __device__ float maxf(const float a, const float b) {
+__host__ __device__ float maxf(const float a, const float b)
+{
     return a > b ? a : b;
 }
 

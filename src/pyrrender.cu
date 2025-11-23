@@ -9,7 +9,7 @@ Maf44 make_cam_matrix(const float3 pos, const float3 target)
 {
     constexpr float3 upTemp = {0, -1, 0};
 
-    const auto [fr, fg, fb] = norm_f3(sub_f3(target, pos));
+    const auto [fr, fg, fb] = norm_f3(target- pos);
     const auto [rr, rg, rb] = norm_f3({
         upTemp.y * fb - upTemp.z * fg,
         upTemp.z * fr - upTemp.x * fb,
@@ -52,9 +52,9 @@ __device__ float3 frag(const float2 uv, const ViewParams* vp, const Material* ma
                        const int rayPerPixel, const int maxBounces, const int imageWidth)
 {
     const auto [u, v] = uv;
-    const float3 vpl = mul_f3({u, v, 1.0f}, {vp->pwidth, vp->pheight, vp->cam.ncp});
+    const float3 vpl = make_float3(u, v, 1.0f) * make_float3(vp->pwidth, vp->pheight, vp->cam.ncp);
     const float4 vpl4 = f3_to_f4(vpl, 1.0f);
-    const float3 vpw = f4_to_f3(mul_maf4_f4(vp->ltwm, vpl4));
+    const float3 vpw = f4_to_f3(vp->ltwm * vpl4);
     const float3 origin = vp->cam.t.position;
     const float3 camRight = {vp->ltwm.m[0][0], vp->ltwm.m[1][0], vp->ltwm.m[2][0]};
     const float3 camUp = {vp->ltwm.m[0][1], vp->ltwm.m[1][1], vp->ltwm.m[2][1]};
@@ -63,13 +63,13 @@ __device__ float3 frag(const float2 uv, const ViewParams* vp, const Material* ma
 
     for (int i = 0; i < rayPerPixel; i++)
     {
-        const auto [jitterx, jittery] = mul_f2_f(rand_circle_point(seed + i), 3.0f / static_cast<float>(imageWidth));
-        const float3 jvp = add_f3(add_f3(vpw, mul_f3_f(camRight, jitterx)), mul_f3_f(camUp, jittery));
-        const Ray ray = {.origin = origin, .dir = norm_f3(sub_f3(jvp, origin))};
-        total = add_f3(trace(ray, materialBuffer, triangleBuffer, meshBuffer, nmesh, seed + i, maxBounces), total);
+        const auto [jitterx, jittery] = rand_circle_point(seed + i) * (3.0f / static_cast<float>(imageWidth));
+        const float3 jvp = vpw + camRight * jitterx + camUp * jittery;
+        const Ray ray = {.origin = origin, .dir = norm_f3(jvp - origin)};
+        total = trace(ray, materialBuffer, triangleBuffer, meshBuffer, nmesh, seed + i, maxBounces) + total;
     }
 
-    return div_f3_f(total, static_cast<float>(rayPerPixel));
+    return total / static_cast<float>(rayPerPixel);
 }
 
 __device__ float3 trace(const Ray& ray, const Material* materialBuffer, const float3* triangleBuffer,
@@ -83,15 +83,15 @@ __device__ float3 trace(const Ray& ray, const Material* materialBuffer, const fl
         if (const Hit result = ray_collision(traced, materialBuffer, triangleBuffer, meshBuffer, nmesh); result.didHit)
         {
             traced.origin = result.location;
-            traced.dir = norm_f3(add_f3(result.normal, rand_direction(seed + 7626 * i)));
+            traced.dir = norm_f3(result.normal + rand_direction(seed + 7626 * i));
             const auto [color, emissive, emstrength] = result.material;
-            const float3 emitted = mul_f3_f(emissive, emstrength);
-            light = add_f3(mul_f3(emitted, col), light);
-            col = mul_f3(col, color);
+            const float3 emitted = emissive * emstrength;
+            light = emitted * col + light;
+            col = col * color;
         }
         else
         {
-            light = mul_f3(add_f3(light, environmental_light(traced)), col);
+            light = (light + environmental_light(traced)) * col;
             break;
         }
     }
@@ -118,8 +118,7 @@ __global__ void render(float3* out, const Material* materialBuffer, const float3
     };
     const long pixelindex = pixcoord.y * numpixels.x + pixcoord.x;
 
-    out[idx] = frag(sub_f2_f(uv, .5f), &vp, materialBuffer, triangleBuffer, meshBuffer, nmesh, pixelindex * seed,
-                    rayPerPixel, maxBounces, imageWidth);
+    out[idx] = frag(uv - .5f, &vp, materialBuffer, triangleBuffer, meshBuffer, nmesh, pixelindex * seed, rayPerPixel, maxBounces, imageWidth);
 }
 
 __device__ Hit ray_collision(const Ray& ray, const Material* materialBuffer, const float3* triangleBuffer,
@@ -170,10 +169,10 @@ __device__ __forceinline__ Hit hit_triangle(const Ray& ray, const Triangle& tria
             .0f
         }
     };
-    const float3 edgeAB = sub_f3(triangle.posb, triangle.posa);
-    const float3 edgeAC = sub_f3(triangle.posc, triangle.posa);
+    const float3 edgeAB = triangle.posb - triangle.posa;
+    const float3 edgeAC = triangle.posc - triangle.posa;
     const float3 normal = cross_f3(edgeAB, edgeAC);
-    const float3 ao = sub_f3(ray.origin, triangle.posa);
+    const float3 ao = ray.origin - triangle.posa;
     const float3 dao = cross_f3(ao, ray.dir);
 
     const float det = -dot_f3(ray.dir, normal);
@@ -200,9 +199,8 @@ __device__ __forceinline__ Hit hit_triangle(const Ray& ray, const Triangle& tria
         return nullhit;
     }
 
-    const float3 tloc = add_f3(ray.origin, mul_f3_f(ray.dir, dst));
-    const float3 tnorm = norm_f3(add_f3(add_f3(mul_f3_f(triangle.normb, u), mul_f3_f(triangle.normc, v)),
-                                        mul_f3_f(triangle.norma, w)));
+    const float3 tloc = ray.origin + ray.dir * dst;
+    const float3 tnorm = norm_f3(triangle.normb * u + triangle.normc * v + triangle.norma * w);
     return Hit{
         true,
         dst,
@@ -237,14 +235,14 @@ __device__ float3 rand_direction(const unsigned int state)
 __device__ float3 rand_normal_direction(const float3 normal, const unsigned int state)
 {
     const float3 dir = rand_direction(state);
-    return mul_f3_f(dir, sign_f(dot_f3(normal, dir)));
+    return dir * sign_f(dot_f3(normal, dir));
 }
 
 __device__ float2 rand_circle_point(const unsigned int state)
 {
     const float angle = rand_value(state) * 2.0f * static_cast<float>(M_PI);
     const float2 pointOnCircle = {cos(angle), sin(angle)};
-    return mul_f2_f(pointOnCircle, sqrtf(rand_value(state)));
+    return pointOnCircle * sqrtf(rand_value(state));
 }
 
 __device__ float3 environmental_light(const Ray& ray)
@@ -258,9 +256,9 @@ __device__ float3 environmental_light(const Ray& ray)
 
     const float skyT = pow(smoothstep(.0f, .4f, ray.dir.y), .185f);
     const float3 sky = lerp_f3(ZenithColor, HorizonColor, skyT);
-    const float sun = pow(maxf(0, dot_f3(ray.dir, mul_f3_f(SunLightDirection, -1.0f))), SunFocus) * SunIntensity;
+    const float sun = pow(maxf(0, dot_f3(ray.dir, SunLightDirection * -1.0f)), SunFocus) * SunIntensity;
 
     const float groundT = smoothstep(.01f, .0f, ray.dir.y);
     const float sunMask = groundT <= 0;
-    return add_f3_f(lerp_f3(sky, GroundColor, groundT), sun * sunMask);
+    return lerp_f3(sky, GroundColor, groundT) + sun * sunMask;
 }
